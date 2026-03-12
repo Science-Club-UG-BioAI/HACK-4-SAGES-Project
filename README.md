@@ -11,3 +11,6 @@
 3. Go to http://localhost:8080 or http://127.0.0.1:8080 to start using app.
 
 
+## Authors
+* Jan Wolski
+* Mateusz Gawin
