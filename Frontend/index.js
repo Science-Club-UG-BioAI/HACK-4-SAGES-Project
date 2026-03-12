@@ -206,7 +206,7 @@ function renderResults(data) {
     metaFirstValues.textContent = means.length > 0
         ? means.slice(0, 3).map(formatValue).join(", ")
         : "—";
-    metaLoopCount.textContent = data.loop_count ?? loopCount ?? "—";
+    metaLoopCount.textContent = data.num_repeats ?? loopCount ?? "—";
 }
 
 async function uploadSelectedFile() {
@@ -223,13 +223,14 @@ async function uploadSelectedFile() {
 
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("loop_count", String(loopCount));
+    formData.append("num_repeats", String(loopCount));
+    formData.append("plot_path", "out/plot.png")
 
     uploadButton.disabled = true;
     status.textContent = "Uploading and generating analysis...";
 
     try {
-        const response = await fetch("/upload", {
+        const response = await fetch("http://127.0.0.1:2137/upload/", {
             method: "POST",
             body: formData,
         });
@@ -251,6 +252,7 @@ async function uploadSelectedFile() {
         status.textContent = "Spectrum processed successfully.";
         resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) {
+        console.log(error)
         status.textContent = "Backend connection error.";
         metaFilename.textContent = "Awaiting upload";
         metaVectorLength.textContent = "—";
