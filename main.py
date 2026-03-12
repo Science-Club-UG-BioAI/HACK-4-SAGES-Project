@@ -12,7 +12,7 @@ import numpy as np
 
 if not Path("best_model.pth").exists():
     print("[INFO] best_model.pt not found downloading...")
-    hf_hub_download(repo_id="kodON/MultiHeadInaraRegressor", filename="best_model.pt")
+    hf_hub_download(repo_id="kodON/MultiHeadInaraRegressor", filename="best_model.pt", local_dir=".")
 
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
