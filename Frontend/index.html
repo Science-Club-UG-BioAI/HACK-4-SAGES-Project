@@ -1,21 +1,239 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <link rel="stylesheet" href="/static/index.css"/>
-        <title>SpectraMaker</title>  
-    </head>
-    <body>
-        <h1>SpectraMaker</h1>
-        <button id="btn" class="get-started">Get Started</button>
-        <p id="result"></p>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/static/index.css" />
+    <title>SpectraMaker</title>
+</head>
+<body>
+    <div class="page-shell">
+        <div class="cosmos-backdrop">
+            <div class="starfield starfield-a twinkle-layer twinkle-slow"></div>
+            <div class="starfield starfield-b twinkle-layer twinkle-mid"></div>
+            <div class="starfield starfield-c twinkle-layer twinkle-fast"></div>
 
-        <input type="file" id="fileInput" accept=".txt,.csv"/>
-        <button id="UploadFileButton">Upload file</button>
-        <p id="status"></p> 
-        <pre id="output"></pre>
+            <div class="nebula nebula-a floating-nebula nebula-drift-a"></div>
+            <div class="nebula nebula-b floating-nebula nebula-drift-b"></div>
 
-        <script src="/static/index.js"></script>
-    </body>
+            <div id="planetMain" class="planet planet-main"></div>
+            <div id="planetAtmosphere" class="planet-atmosphere"></div>
+            <div id="planetRim" class="planet-rim"></div>
+            <div class="planet-shadow"></div>
+        </div>
+
+        <header class="hero-section">
+            <div class="hero-content">
+                <div class="hero-copy">
+                    <p class="eyebrow">Planetary Horizon</p>
+                    <h1>SpectraMaker</h1>
+                    <p class="hero-description">
+                        Upload a comma-separated exoplanet spectrum vector and preview atmospheric and planetary
+                        properties in a cinematic planetary interface.
+                    </p>
+                </div>
+
+                <section class="upload-panel">
+                    <div class="upload-copy">
+                        <p class="upload-label">Spectrum input</p>
+                        <p class="upload-info">
+                            Accepted format: a single numeric vector with comma-separated values in a .txt or .csv file.
+                        </p>
+                    </div>
+
+                    <input type="file" id="fileInput" accept=".txt,.csv" hidden />
+
+                    <div id="dropZone" class="drop-zone" tabindex="0" aria-label="Upload spectrum file">
+                        <div class="drop-zone-empty">
+                            <p class="drop-zone-title">Drop spectrum here</p>
+                            <p class="drop-zone-subtitle">or click to browse</p>
+                        </div>
+
+                        <div class="drop-zone-loaded" hidden>
+                            <p class="loaded-kicker">Loaded spectrum</p>
+                            <p id="dropZoneFileName" class="loaded-file-name">spectrum.txt</p>
+                            <p class="loaded-subtitle">Click here to replace it or use remove.</p>
+                        </div>
+                    </div>
+
+                    <div class="action-row">
+                        <div class="loop-control">
+                            <label for="loopCountInput" class="loop-label">Model repeats</label>
+                            <input
+                                id="loopCountInput"
+                                class="loop-input"
+                                type="number"
+                                inputmode="numeric"
+                                min="2"
+                                max="64"
+                                placeholder="2–64"
+                                aria-describedby="loopHint"
+                            />
+                        </div>
+
+                        <button id="UploadFileButton" class="primary-button" type="button" disabled>
+                            Analyze spectrum
+                        </button>
+                        <button id="RemoveFileButton" class="ghost-button" type="button">Remove</button>
+                    </div>
+
+                    <p id="loopHint" class="loop-hint">
+                        Set a repeat count from 2 to 64 before starting the analysis.
+                    </p>
+                    <p id="status" class="status-text"></p>
+                </section>
+            </div>
+        </header>
+
+        <main class="results-section" id="resultsSection">
+            <div class="results-scene">
+                <section class="results-layer">
+                    <div class="results-heading">
+                        <p class="eyebrow">Predicted atmosphere and planet properties</p>
+                        <h2>Analysis output</h2>
+                        <p class="results-description">
+                            Demo presentation layer for the future model output. As you move downward, the planet
+                            comes closer and occupies more of the frame, while a strip of open space remains visible above.
+                        </p>
+                    </div>
+
+                    <div class="telemetry-strip">
+                        <div class="telemetry-item">
+                            <span class="telemetry-label">Uploaded file</span>
+                            <strong id="metaFilename">Awaiting upload</strong>
+                        </div>
+                        <div class="telemetry-item">
+                            <span class="telemetry-label">Vector length</span>
+                            <strong id="metaVectorLength">—</strong>
+                        </div>
+                        <div class="telemetry-item">
+                            <span class="telemetry-label">First values</span>
+                            <strong id="metaFirstValues">—</strong>
+                        </div>
+                        <div class="telemetry-item">
+                            <span class="telemetry-label">Model repeats</span>
+                            <strong id="metaLoopCount">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="results-grid">
+                        <div class="results-grid-head">
+                            <span>Feature</span>
+                            <span>Prediction</span>
+                            <span>Std</span>
+                            <span>Error margin</span>
+                        </div>
+
+                        <div id="resultsTableBody" class="results-grid-body">
+                            <div class="result-row">
+                                <span>planet_radius_(Earth_radii)</span>
+                                <span id="pred-0">—</span>
+                                <span id="std-0">—</span>
+                                <span id="err-0">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>planet_density_(g/cm3)</span>
+                                <span id="pred-1">—</span>
+                                <span id="std-1">—</span>
+                                <span id="err-1">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>planet_surface_pressure_(bar)</span>
+                                <span id="pred-2">—</span>
+                                <span id="std-2">—</span>
+                                <span id="err-2">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>planet_surface_temperature_(Kelvin)</span>
+                                <span id="pred-3">—</span>
+                                <span id="std-3">—</span>
+                                <span id="err-3">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>H2O</span>
+                                <span id="pred-4">—</span>
+                                <span id="std-4">—</span>
+                                <span id="err-4">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>CO2</span>
+                                <span id="pred-5">—</span>
+                                <span id="std-5">—</span>
+                                <span id="err-5">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>O2</span>
+                                <span id="pred-6">—</span>
+                                <span id="std-6">—</span>
+                                <span id="err-6">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>N2</span>
+                                <span id="pred-7">—</span>
+                                <span id="std-7">—</span>
+                                <span id="err-7">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>CH4</span>
+                                <span id="pred-8">—</span>
+                                <span id="std-8">—</span>
+                                <span id="err-8">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>N2O</span>
+                                <span id="pred-9">—</span>
+                                <span id="std-9">—</span>
+                                <span id="err-9">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>CO</span>
+                                <span id="pred-10">—</span>
+                                <span id="std-10">—</span>
+                                <span id="err-10">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>O3</span>
+                                <span id="pred-11">—</span>
+                                <span id="std-11">—</span>
+                                <span id="err-11">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>SO2</span>
+                                <span id="pred-12">—</span>
+                                <span id="std-12">—</span>
+                                <span id="err-12">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>NH3</span>
+                                <span id="pred-13">—</span>
+                                <span id="std-13">—</span>
+                                <span id="err-13">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>C2H6</span>
+                                <span id="pred-14">—</span>
+                                <span id="std-14">—</span>
+                                <span id="err-14">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>NO2</span>
+                                <span id="pred-15">—</span>
+                                <span id="std-15">—</span>
+                                <span id="err-15">—</span>
+                            </div>
+                            <div class="result-row">
+                                <span>planet's_mean_surface_albedo_(unitless)</span>
+                                <span id="pred-16">—</span>
+                                <span id="std-16">—</span>
+                                <span id="err-16">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/index.js"></script>
+</body>
 </html>
