@@ -4,7 +4,6 @@ reports/
 plots/
 data/
 .vscode/
-model.py
 *.png
 *.txt
 

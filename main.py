@@ -11,6 +11,7 @@ import numpy as np
 
 
 if not Path("best_model.pth").exists():
+    print("[INFO] best_model.pt not found downloading...")
     hf_hub_download(repo_id="kodON/MultiHeadInaraRegressor", filename="best_model.pt")
 
 
