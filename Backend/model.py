@@ -12,7 +12,7 @@ from ML.main import (
 )
 from matplotlib import pyplot as plt
 
-OLD_GRID = np.linspace(0.5, 20, 15346)
+
 FIXED_GRID = np.linspace(0.5, 20, 2048)
 BATCH_SIZE = 64
 normalizer = TargetNormalizer.load("target_normalizer.json")
@@ -33,6 +33,8 @@ def predict(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     if isinstance(spectrum, torch.Tensor):
         spectrum = spectrum.detach().cpu().numpy()
+
+    OLD_GRID = np.linspace(0.5, 20, spectrum.shape[0])
 
     spectrum = np.interp(FIXED_GRID, OLD_GRID, spectrum).astype(np.float32)
     spectrum = torch.tensor(spectrum, dtype=torch.float32)
