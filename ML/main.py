@@ -17,7 +17,6 @@ from ML.download import InaraDataset
 
 from torchinfo import summary
 
-
 SEED = 2137
 EPOCHS = 0 #35
 BATCH_SIZE = 128
