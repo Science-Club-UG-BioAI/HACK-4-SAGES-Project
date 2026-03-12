@@ -35,6 +35,28 @@
 
                 <section class="upload-panel">
                     <div class="upload-copy">
+                        <p class="upload-label">Plot output</p>
+                        <p class="upload-info">
+                            Set the exact file path where the generated plot should be saved before starting the analysis.
+                        </p>
+                    </div>
+
+                    <div class="plot-path-control">
+                        <label for="plotPathInput" class="loop-label">Plot output path</label>
+                        <input
+                            id="plotPathInput"
+                            class="loop-input"
+                            type="text"
+                            placeholder="e.g. out/plot.png or results/run_01.jpg"
+                            aria-describedby="plotPathHint"
+                        />
+                    </div>
+
+                    <p id="plotPathHint" class="loop-hint">
+                        Allowed extensions: .png or .jpg
+                    </p>
+
+                    <div class="upload-copy upload-copy-spacing">
                         <p class="upload-label">Spectrum input</p>
                         <p class="upload-info">
                             Accepted format: a single numeric vector with comma-separated values in a .txt or .csv file.
@@ -105,10 +127,6 @@
                         <div class="telemetry-item">
                             <span class="telemetry-label">Vector length</span>
                             <strong id="metaVectorLength">—</strong>
-                        </div>
-                        <div class="telemetry-item">
-                            <span class="telemetry-label">First values</span>
-                            <strong id="metaFirstValues">—</strong>
                         </div>
                         <div class="telemetry-item">
                             <span class="telemetry-label">Model repeats</span>
@@ -227,6 +245,21 @@
                                 <span id="std-16">—</span>
                                 <span id="err-16">—</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="iterations-section">
+                        <div class="iterations-header">
+                            <p class="eyebrow">Detailed repeat inspection</p>
+                            <h3>Per-iteration predictions</h3>
+                            <p class="iterations-description">
+                                Each block below shows raw predictions from a single model repeat, so you can compare one iteration
+                                against the aggregated analysis shown above.
+                            </p>
+                        </div>
+
+                        <div id="iterationsContainer" class="iterations-container">
+                            <p class="iterations-placeholder">Run analysis to inspect individual iterations.</p>
                         </div>
                     </div>
                 </section>

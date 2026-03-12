@@ -2,6 +2,7 @@ const fileInput = document.getElementById("fileInput");
 const uploadButton = document.getElementById("UploadFileButton");
 const removeButton = document.getElementById("RemoveFileButton");
 const loopCountInput = document.getElementById("loopCountInput");
+const plotPathInput = document.getElementById("plotPathInput");
 
 const status = document.getElementById("status");
 const dropZone = document.getElementById("dropZone");
@@ -13,8 +14,8 @@ const resultsSection = document.getElementById("resultsSection");
 const resultsLayer = document.querySelector(".results-layer");
 const metaFilename = document.getElementById("metaFilename");
 const metaVectorLength = document.getElementById("metaVectorLength");
-const metaFirstValues = document.getElementById("metaFirstValues");
 const metaLoopCount = document.getElementById("metaLoopCount");
+const iterationsContainer = document.getElementById("iterationsContainer");
 
 const planetMain = document.getElementById("planetMain");
 const planetAtmosphere = document.getElementById("planetAtmosphere");
@@ -22,8 +23,29 @@ const planetRim = document.getElementById("planetRim");
 
 const FEATURE_COUNT = 17;
 
+const FEATURE_NAMES = [
+    "planet_radius_(Earth_radii)",
+    "planet_density_(g/cm3)",
+    "planet_surface_pressure_(bar)",
+    "planet_surface_temperature_(Kelvin)",
+    "H2O",
+    "CO2",
+    "O2",
+    "N2",
+    "CH4",
+    "N2O",
+    "CO",
+    "O3",
+    "SO2",
+    "NH3",
+    "C2H6",
+    "NO2",
+    "planet's_mean_surface_albedo_(unitless)"
+];
+
 let selectedFile = null;
 let loopCount = null;
+let plotPath = "";
 
 let currentPlanetState = {
     mainScale: 0.72,
@@ -53,7 +75,7 @@ function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
 }
 
-function normalizeLoopCount(rawValue) {
+function parseLoopCount(rawValue) {
     if (rawValue === "" || rawValue === null || rawValue === undefined) {
         return null;
     }
@@ -64,16 +86,42 @@ function normalizeLoopCount(rawValue) {
         return null;
     }
 
-    const integerValue = Math.round(numericValue);
-    return clamp(integerValue, 2, 64);
+    return Math.round(numericValue);
+}
+
+function normalizeLoopCount(rawValue) {
+    const parsedValue = parseLoopCount(rawValue);
+
+    if (parsedValue === null) {
+        return null;
+    }
+
+    return clamp(parsedValue, 2, 64);
+}
+
+function normalizePlotPath(rawValue) {
+    if (typeof rawValue !== "string") {
+        return "";
+    }
+
+    return rawValue.trim();
 }
 
 function hasValidLoopCount() {
     return Number.isInteger(loopCount) && loopCount >= 2 && loopCount <= 64;
 }
 
+function hasValidPlotPath() {
+    if (!plotPath) {
+        return false;
+    }
+
+    const lowerPath = plotPath.toLowerCase();
+    return lowerPath.endsWith(".png") || lowerPath.endsWith(".jpg") || lowerPath.endsWith(".jpeg");
+}
+
 function updateAnalyzeButtonState() {
-    uploadButton.disabled = !(selectedFile && hasValidLoopCount());
+    uploadButton.disabled = !(selectedFile && hasValidLoopCount() && hasValidPlotPath());
 }
 
 function updateDropZoneState() {
@@ -99,7 +147,6 @@ function updateLoopUI() {
         loopCountInput.classList.remove("loop-invalid");
     } else if (valid) {
         loopCountInput.classList.remove("loop-invalid");
-        loopCountInput.value = String(loopCount);
     } else {
         loopCountInput.classList.add("loop-invalid");
     }
@@ -107,15 +154,41 @@ function updateLoopUI() {
     updateAnalyzeButtonState();
 }
 
+function updatePlotPathUI() {
+    if (plotPath === "") {
+        plotPathInput.classList.remove("loop-invalid");
+    } else if (hasValidPlotPath()) {
+        plotPathInput.classList.remove("loop-invalid");
+    } else {
+        plotPathInput.classList.add("loop-invalid");
+    }
+
+    updateAnalyzeButtonState();
+}
+
+function updateStatusAfterInputChange() {
+    if (!hasValidPlotPath()) {
+        status.textContent = "Set a valid plot output path ending with .png or .jpg.";
+        return;
+    }
+
+    if (!selectedFile) {
+        status.textContent = "Plot output path is set. Add a spectrum file to continue.";
+        return;
+    }
+
+    if (!hasValidLoopCount()) {
+        status.textContent = "Set model repeats from 2 to 64 to enable the analysis.";
+        return;
+    }
+
+    status.textContent = "File, plot path and repeat count are ready for upload.";
+}
+
 function setSelectedFile(file) {
     selectedFile = file;
     updateDropZoneState();
-
-    if (selectedFile && !hasValidLoopCount()) {
-        status.textContent = "Set model repeats from 2 to 64 to enable the analysis.";
-    } else if (selectedFile && hasValidLoopCount()) {
-        status.textContent = "File and repeat count are ready for upload.";
-    }
+    updateStatusAfterInputChange();
 }
 
 function clearSelectedFile(message = "File removed.") {
@@ -125,27 +198,27 @@ function clearSelectedFile(message = "File removed.") {
     status.textContent = message;
 }
 
-function setLoopCount(rawValue, { commitToInput = false } = {}) {
-    const normalized = normalizeLoopCount(rawValue);
-    loopCount = normalized;
+function setPlotPath(rawValue, { commitToInput = false } = {}) {
+    plotPath = normalizePlotPath(rawValue);
 
-    if (commitToInput && normalized !== null) {
-        loopCountInput.value = String(normalized);
+    if (commitToInput) {
+        plotPathInput.value = plotPath;
     }
 
-    if (commitToInput && normalized === null) {
-        loopCountInput.value = "";
+    updatePlotPathUI();
+    updateStatusAfterInputChange();
+}
+
+function setLoopCount(rawValue, { commitToInput = false, clampValue = false } = {}) {
+    const parsed = clampValue ? normalizeLoopCount(rawValue) : parseLoopCount(rawValue);
+    loopCount = parsed;
+
+    if (commitToInput) {
+        loopCountInput.value = parsed === null ? "" : String(parsed);
     }
 
     updateLoopUI();
-
-    if (!selectedFile && hasValidLoopCount()) {
-        status.textContent = "Repeat count is set. Add a spectrum file to continue.";
-    } else if (selectedFile && hasValidLoopCount()) {
-        status.textContent = "File and repeat count are ready for upload.";
-    } else if (selectedFile && !hasValidLoopCount()) {
-        status.textContent = "Set model repeats from 2 to 64 to enable the analysis.";
-    }
+    updateStatusAfterInputChange();
 }
 
 function formatValue(value) {
@@ -184,10 +257,75 @@ function clearResultCells() {
     }
 }
 
+function clearIterationTables() {
+    if (!iterationsContainer) return;
+
+    iterationsContainer.innerHTML = `
+        <p class="iterations-placeholder">Run analysis to inspect individual iterations.</p>
+    `;
+}
+
+function renderIterationTables(predictions, means = []) {
+    if (!iterationsContainer) return;
+
+    if (!Array.isArray(predictions) || predictions.length === 0) {
+        clearIterationTables();
+        return;
+    }
+
+    const cardsHtml = predictions.map((iterationValues, iterationIndex) => {
+        const rowsHtml = FEATURE_NAMES.map((featureName, featureIndex) => {
+            const iterationValue = Array.isArray(iterationValues) ? iterationValues[featureIndex] : null;
+            const meanValue = means[featureIndex];
+            const deltaValue =
+                Number.isFinite(Number(iterationValue)) && Number.isFinite(Number(meanValue))
+                    ? Number(iterationValue) - Number(meanValue)
+                    : null;
+
+            return `
+                <div class="iteration-row">
+                    <span>${featureName}</span>
+                    <span>
+                        ${formatValue(iterationValue)}
+                        <span class="iteration-subtitle">
+                            &nbsp;|&nbsp; Δ vs mean: ${formatValue(deltaValue)}
+                        </span>
+                    </span>
+                </div>
+            `;
+        }).join("");
+
+        return `
+            <div class="iteration-card">
+                <div class="iteration-card-header">
+                    <div>
+                        <div class="iteration-title">Iteration ${iterationIndex + 1}</div>
+                        <div class="iteration-subtitle">
+                            Compare this repeat against the aggregated result above.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="iteration-grid-head">
+                    <span>Feature</span>
+                    <span>Prediction</span>
+                </div>
+
+                <div class="iteration-grid-body">
+                    ${rowsHtml}
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    iterationsContainer.innerHTML = cardsHtml;
+}
+
 function renderResults(data) {
     const means = Array.isArray(data.mean) ? data.mean : [];
     const stds = Array.isArray(data.std) ? data.std : [];
     const errors = Array.isArray(data.errors) ? data.errors : [];
+    const predictions = Array.isArray(data.predicitons) ? data.predicitons : [];
 
     for (let i = 0; i < FEATURE_COUNT; i++) {
         const predCell = document.getElementById(`pred-${i}`);
@@ -200,13 +338,12 @@ function renderResults(data) {
     }
 
     metaFilename.textContent = data.filename || selectedFile?.name || "Demo spectrum";
-    metaVectorLength.textContent = Array.isArray(data.predicitons?.[0])
-        ? data.predicitons[0].length
-        : "—";
-    metaFirstValues.textContent = means.length > 0
-        ? means.slice(0, 3).map(formatValue).join(", ")
+    metaVectorLength.textContent = Array.isArray(predictions?.[0])
+        ? predictions[0].length
         : "—";
     metaLoopCount.textContent = data.num_repeats ?? loopCount ?? "—";
+
+    renderIterationTables(predictions, means);
 }
 
 async function uploadSelectedFile() {
@@ -214,6 +351,16 @@ async function uploadSelectedFile() {
         status.textContent = "Please select a file first.";
         return;
     }
+
+    if (!hasValidPlotPath()) {
+        status.textContent = "Please set a valid plot output path ending with .png or .jpg first.";
+        plotPathInput.focus();
+        return;
+    }
+
+    loopCount = normalizeLoopCount(loopCountInput.value);
+    loopCountInput.value = loopCount === null ? "" : String(loopCount);
+    updateLoopUI();
 
     if (!hasValidLoopCount()) {
         status.textContent = "Please set model repeats from 2 to 64 first.";
@@ -224,7 +371,7 @@ async function uploadSelectedFile() {
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("num_repeats", String(loopCount));
-    formData.append("plot_path", "out/plot.png")
+    formData.append("plot_path", plotPath);
 
     uploadButton.disabled = true;
     status.textContent = "Uploading and generating analysis...";
@@ -241,25 +388,24 @@ async function uploadSelectedFile() {
             status.textContent = data.detail || "Upload failed.";
             metaFilename.textContent = "Awaiting upload";
             metaVectorLength.textContent = "—";
-            metaFirstValues.textContent = "—";
             metaLoopCount.textContent = "—";
             clearResultCells();
+            clearIterationTables();
             updateAnalyzeButtonState();
             return;
         }
 
         renderResults(data);
-        status.textContent = "Spectrum processed successfully.";
-        resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        status.textContent = "Analysis completed successfully.";
+        updateAnalyzeButtonState();
     } catch (error) {
-        console.log(error)
-        status.textContent = "Backend connection error.";
+        console.error(error);
+        status.textContent = "Could not connect to the backend.";
         metaFilename.textContent = "Awaiting upload";
         metaVectorLength.textContent = "—";
-        metaFirstValues.textContent = "—";
         metaLoopCount.textContent = "—";
         clearResultCells();
-    } finally {
+        clearIterationTables();
         updateAnalyzeButtonState();
     }
 }
@@ -326,18 +472,23 @@ uploadButton.addEventListener("click", uploadSelectedFile);
 
 removeButton.addEventListener("click", () => {
     clearSelectedFile("");
+    plotPath = "";
+    plotPathInput.value = "";
+    plotPathInput.classList.remove("loop-invalid");
+    updatePlotPathUI();
+
     loopCount = null;
     loopCountInput.value = "";
     loopCountInput.classList.remove("loop-invalid");
     updateLoopUI();
     clearResultCells();
+    clearIterationTables();
 
     metaFilename.textContent = "Awaiting upload";
     metaVectorLength.textContent = "—";
-    metaFirstValues.textContent = "—";
     metaLoopCount.textContent = "—";
 
-    status.textContent = "File and repeat count removed.";
+    status.textContent = "File, repeat count and plot path removed.";
 });
 
 loopCountInput.addEventListener("input", (event) => {
@@ -347,14 +498,11 @@ loopCountInput.addEventListener("input", (event) => {
         loopCount = null;
         loopCountInput.classList.remove("loop-invalid");
         updateAnalyzeButtonState();
-
-        if (selectedFile) {
-            status.textContent = "Set model repeats from 2 to 64 to enable the analysis.";
-        }
+        updateStatusAfterInputChange();
         return;
     }
 
-    setLoopCount(value, { commitToInput: false });
+    setLoopCount(value, { commitToInput: false, clampValue: false });
 });
 
 loopCountInput.addEventListener("blur", (event) => {
@@ -364,10 +512,19 @@ loopCountInput.addEventListener("blur", (event) => {
         loopCount = null;
         loopCountInput.classList.remove("loop-invalid");
         updateAnalyzeButtonState();
+        updateStatusAfterInputChange();
         return;
     }
 
-    setLoopCount(value, { commitToInput: true });
+    setLoopCount(value, { commitToInput: false, clampValue: false });
+});
+
+plotPathInput.addEventListener("input", (event) => {
+    setPlotPath(event.target.value, { commitToInput: false });
+});
+
+plotPathInput.addEventListener("blur", (event) => {
+    setPlotPath(event.target.value, { commitToInput: true });
 });
 
 fileInput.addEventListener("change", () => {
@@ -435,4 +592,6 @@ window.addEventListener("load", requestPlanetUpdate);
 
 updateDropZoneState();
 updateLoopUI();
+updatePlotPathUI();
+clearIterationTables();
 requestPlanetUpdate();
