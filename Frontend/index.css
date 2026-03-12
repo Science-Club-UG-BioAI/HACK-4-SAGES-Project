@@ -666,7 +666,7 @@ body {
 .iteration-grid-head,
 .iteration-row {
     display: grid;
-    grid-template-columns: 1.6fr 1fr;
+    grid-template-columns: 1.6fr 1fr 1fr;
     gap: 1rem;
     align-items: center;
 }
@@ -695,6 +695,11 @@ body {
 .iteration-row span:first-child {
     font-weight: 600;
     padding-right: 1rem;
+}
+
+.iteration-row span:last-child {
+    color: var(--text-soft);
+    font-weight: 600;
 }
 
 @media (max-width: 900px) {

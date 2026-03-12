@@ -24,23 +24,23 @@ const planetRim = document.getElementById("planetRim");
 const FEATURE_COUNT = 17;
 
 const FEATURE_NAMES = [
-    "planet_radius_(Earth_radii)",
-    "planet_density_(g/cm3)",
-    "planet_surface_pressure_(bar)",
-    "planet_surface_temperature_(Kelvin)",
-    "H2O",
-    "CO2",
-    "O2",
-    "N2",
-    "CH4",
-    "N2O",
-    "CO",
-    "O3",
-    "SO2",
-    "NH3",
-    "C2H6",
-    "NO2",
-    "planet's_mean_surface_albedo_(unitless)"
+    "Planet radius",
+    "Planet density (g/cm3)",
+    "Planet surface pressure (bar)",
+    "Planet surface temperature (Kelvin)",
+    "H2O abundance",
+    "CO2 abundance",
+    "O2 abundance",
+    "N2 abundance",
+    "CH4 abundance",
+    "N2O abundance",
+    "CO abundance",
+    "O3 abundance",
+    "SO2 abundance",
+    "NH3 abundance",
+    "C2H6 abundance",
+    "NO2 abundance",
+    "Planet's mean surface albedo"
 ];
 
 let selectedFile = null;
@@ -285,12 +285,8 @@ function renderIterationTables(predictions, means = []) {
             return `
                 <div class="iteration-row">
                     <span>${featureName}</span>
-                    <span>
-                        ${formatValue(iterationValue)}
-                        <span class="iteration-subtitle">
-                            &nbsp;|&nbsp; Δ vs mean: ${formatValue(deltaValue)}
-                        </span>
-                    </span>
+                    <span>${formatValue(iterationValue)}</span>
+                    <span>${formatValue(deltaValue)}</span>
                 </div>
             `;
         }).join("");
@@ -309,6 +305,7 @@ function renderIterationTables(predictions, means = []) {
                 <div class="iteration-grid-head">
                     <span>Feature</span>
                     <span>Prediction</span>
+                    <span>Δ vs Mean</span>
                 </div>
 
                 <div class="iteration-grid-body">
